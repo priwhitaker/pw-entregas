@@ -258,7 +258,24 @@ body{font-family:'DM Mono',monospace;background:var(--cream);color:var(--dark)}
 .modal-form{display:flex;flex-direction:column;gap:11px}
 .photo-full{width:100%;max-height:60vh;object-fit:contain;display:block}
 
-/* ── EMPTY ── */
+/* ── FOTOS PROTOCOLO PORTADOR ── */
+.photo-upload-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.photo-upload-box{border:1px dashed rgba(184,147,90,.3);padding:12px;text-align:center;position:relative;background:rgba(255,255,255,.02);cursor:pointer;transition:border-color .2s}
+.photo-upload-box:hover{border-color:rgba(184,147,90,.6)}
+.photo-upload-box.has-photo{border-color:rgba(74,124,95,.4);border-style:solid}
+.photo-upload-box input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.photo-upload-icon{font-size:22px;margin-bottom:5px}
+.photo-upload-label{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);line-height:1.4}
+.photo-upload-label span{color:var(--danger);font-size:9px}
+.photo-upload-preview{width:100%;height:80px;object-fit:cover;display:block;margin-top:6px;border:1px solid rgba(74,124,95,.3)}
+.photo-upload-check{font-size:8px;color:var(--success);letter-spacing:1px;margin-top:4px}
+
+/* fotos no protocolo done */
+.protocol-photos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.protocol-photo-item{display:flex;flex-direction:column;gap:3px}
+.protocol-photo-lbl{font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.protocol-photo-img{width:100%;height:72px;object-fit:cover;cursor:pointer;border:1px solid rgba(74,124,95,.25)}
+
 .empty{text-align:center;padding:36px 16px;border:1px dashed var(--border)}
 .empty-icon{font-size:28px;margin-bottom:10px;opacity:.4}
 .empty-text{font-size:11px;color:var(--muted);letter-spacing:1px}
@@ -899,8 +916,40 @@ function renderCarrierCard(o,i){
   const obsLog=o.obsLogistics?`<div class="dc-obs-log"><div class="dc-obs-log-label">Instrução</div>${esc(o.obsLogistics)}</div>`:'';
   const obsSell=(o.obsSellers||[]).filter(s=>!s.isCancel).map(s=>`<div class="dc-obs-seller"><div class="dc-obs-sell-label">${esc(s.author)} · ${s.time}</div>${esc(s.text)}</div>`).join('');
   const cancelObs=(o.obsSellers||[]).filter(s=>s.isCancel).map(s=>`<div class="dc-cancel-banner">${esc(s.text)}</div>`).join('');
-  const protoDone=isDone?`<div class="protocol-done"><div class="protocol-done-title">✓ Protocolo</div><div class="protocol-done-row"><span class="protocol-done-key">Horário</span><span class="protocol-done-val">${o.deliveredAt}</span></div><div class="protocol-done-row"><span class="protocol-done-key">Recebido</span><span class="protocol-done-val">${esc(o.deliveredBy)}</span></div>${o.deliveredNote?`<div class="protocol-done-row"><span class="protocol-done-key">Obs</span><span class="protocol-done-obs">${esc(o.deliveredNote)}</span></div>`:''}</div>`:'';
-  const form=!isDone?`<div class="dc-action-area" id="dcact-${o.id}"><div class="protocol-box"><div class="protocol-title">Protocolo de Entrega</div><div class="protocol-field"><label class="protocol-label">Recebido por *</label><input class="protocol-input" id="dc-recv-${o.id}" placeholder="Nome de quem recebeu"></div><div class="protocol-field"><label class="protocol-label">Observação</label><textarea class="protocol-input protocol-textarea" id="dc-obs-${o.id}" placeholder="Portaria, ausente, vizinho..."></textarea></div><button class="confirm-deliver-btn" onclick="carrierDeliver('${o.id}')">✓ Confirmar Entrega</button></div></div>`:'';
+  const protoDone=isDone?`<div class="protocol-done">
+    <div class="protocol-done-title">✓ Protocolo de Entrega</div>
+    <div class="protocol-done-row"><span class="protocol-done-key">Horário</span><span class="protocol-done-val">${o.deliveredAt}</span></div>
+    <div class="protocol-done-row"><span class="protocol-done-key">Recebido</span><span class="protocol-done-val">${esc(o.deliveredBy)}</span></div>
+    ${o.deliveredNote?`<div class="protocol-done-row"><span class="protocol-done-key">Obs</span><span class="protocol-done-obs">${esc(o.deliveredNote)}</span></div>`:''}
+    ${(o.photoSignature||o.photoFacade)?`<div class="protocol-photos">
+      ${o.photoSignature?`<div class="protocol-photo-item"><div class="protocol-photo-lbl">✍ Assinatura</div><img class="protocol-photo-img" src="${o.photoSignature}" onclick="openPhotoModal(this.src)"></div>`:''}
+      ${o.photoFacade?`<div class="protocol-photo-item"><div class="protocol-photo-lbl">🏠 Fachada</div><img class="protocol-photo-img" src="${o.photoFacade}" onclick="openPhotoModal(this.src)"></div>`:''}
+    </div>`:''}
+  </div>`:'';
+  const form=!isDone?`<div class="dc-action-area" id="dcact-${o.id}">
+    <div class="protocol-box">
+      <div class="protocol-title">Protocolo de Entrega</div>
+      <div class="protocol-field"><label class="protocol-label">Recebido por *</label><input class="protocol-input" id="dc-recv-${o.id}" placeholder="Nome de quem recebeu"></div>
+      <div class="photo-upload-row">
+        <div class="photo-upload-box" id="sig-box-${o.id}">
+          <input type="file" accept="image/*" capture="environment" onchange="handleProtoPhoto(event,'${o.id}','sig')">
+          <div class="photo-upload-icon">✍</div>
+          <div class="photo-upload-label">Assinatura<br><span>* obrigatória</span></div>
+          <img class="photo-upload-preview" id="sig-prev-${o.id}" src="" style="display:none">
+          <div class="photo-upload-check" id="sig-check-${o.id}" style="display:none">✓ foto tirada</div>
+        </div>
+        <div class="photo-upload-box" id="fac-box-${o.id}">
+          <input type="file" accept="image/*" capture="environment" onchange="handleProtoPhoto(event,'${o.id}','fac')">
+          <div class="photo-upload-icon">🏠</div>
+          <div class="photo-upload-label">Fachada<br><span style="color:var(--muted)">opcional</span></div>
+          <img class="photo-upload-preview" id="fac-prev-${o.id}" src="" style="display:none">
+          <div class="photo-upload-check" id="fac-check-${o.id}" style="display:none">✓ foto tirada</div>
+        </div>
+      </div>
+      <div class="protocol-field"><label class="protocol-label">Observação</label><textarea class="protocol-input protocol-textarea" id="dc-obs-${o.id}" placeholder="Portaria, ausente, vizinho..."></textarea></div>
+      <button class="confirm-deliver-btn" onclick="carrierDeliver('${o.id}')">✓ Confirmar Entrega</button>
+    </div>
+  </div>`:'';
   return `<div class="delivery-card ${isDone?'done':''} ${isOverdue?'overdue-dc':''}" style="animation:fadeUp .3s ease ${i*.05}s both">
     <div class="dc-header" onclick="toggleDcAction('${o.id}',${isDone})">
       <div class="dc-num">${i+1}</div>
@@ -931,16 +980,40 @@ function toggleDcAction(id,isDone){
   if(!open)setTimeout(()=>document.getElementById('dc-recv-'+id)?.focus(),120);
 }
 
+// ── FOTOS PROTOCOLO PORTADOR ──
+const _protoPhotos={}; // {id: {sig: base64, fac: base64}}
+function handleProtoPhoto(e,id,type){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=function(ev){
+    if(!_protoPhotos[id])_protoPhotos[id]={};
+    _protoPhotos[id][type]=ev.target.result;
+    const prevEl=document.getElementById((type==='sig'?'sig':'fac')+'-prev-'+id);
+    const checkEl=document.getElementById((type==='sig'?'sig':'fac')+'-check-'+id);
+    const boxEl=document.getElementById((type==='sig'?'sig':'fac')+'-box-'+id);
+    prevEl.src=ev.target.result;prevEl.style.display='block';
+    checkEl.style.display='block';boxEl.classList.add('has-photo');
+  };
+  r.readAsDataURL(file);e.target.value='';
+}
+
+
 function carrierDeliver(id){
   const recv=document.getElementById('dc-recv-'+id)?.value.trim();
   if(!recv){showToast('⚠️','Informe quem recebeu.','danger');return}
+  const sig=_protoPhotos[id]?.sig;
+  if(!sig){showToast('📸','Foto da assinatura é obrigatória.','danger');return}
+  const fac=_protoPhotos[id]?.fac||null;
   const obs=document.getElementById('dc-obs-'+id)?.value.trim();
   const o=orders.find(x=>x.id===id);
-  o.status='delivered';o.deliveredAt=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  o.status='delivered';
+  o.deliveredAt=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   o.deliveredBy=recv;o.deliveredNote=obs||'';
+  o.photoSignature=sig;o.photoFacade=fac;
+  delete _protoPhotos[id];
   saveOrders();
   addNotif('✅',`Entregue: ${o.orderNum} · ${o.client} — ${recv} às ${o.deliveredAt}`,['seller','logistics']);
-  showToast('✅','Entrega registrada!','success');
+  showToast('✅','Entrega registrada com fotos!','success');
   renderCarrier();
 }
 
