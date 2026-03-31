@@ -1,0 +1,24 @@
+{
+  "name": "PW Entregas",
+  "short_name": "PW Entregas",
+  "description": "Sistema de logística e entregas Priscilla Whitaker",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1A1510",
+  "theme_color": "#B8935A",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

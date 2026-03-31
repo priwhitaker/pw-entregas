@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#B8935A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PW Entregas">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>PW Entregas</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#F7F3EE;--warm:#EDE5D8;--gold:#B8935A;--gold-light:#D4AA72;
+  --dark:#1A1510;--mid:#5C4E3A;--muted:#9C8A72;
+  --success:#4A7C5F;--success-light:#EBF4EE;
+  --danger:#B85A5A;--danger-light:#FDF0F0;
+  --info:#5A7AB8;--info-light:#EFF3FD;
+  --border:#D8CCBC;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:'DM Mono',monospace;background:var(--cream);color:var(--dark)}
+
+/* ── LOGIN ── */
+#login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--dark);z-index:1000;overflow-y:auto;padding:24px}
+#login-screen::before{content:'';position:fixed;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(184,147,90,.15) 0%,transparent 70%);top:-100px;right:-100px;pointer-events:none}
+.login-card{background:rgba(247,243,238,.05);border:1px solid rgba(184,147,90,.3);padding:44px 36px;width:100%;max-width:400px;position:relative;animation:fadeUp .5s ease forwards}
+.login-logo{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300;color:var(--gold);letter-spacing:4px;text-align:center;margin-bottom:3px}
+.login-sub{font-size:9px;letter-spacing:3px;color:var(--muted);text-align:center;margin-bottom:32px;text-transform:uppercase}
+.role-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:24px}
+.role-btn{padding:14px 8px;border:1px solid rgba(184,147,90,.25);background:transparent;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:7px}
+.role-btn.active{border-color:var(--gold);background:rgba(184,147,90,.12);color:var(--gold)}
+.role-icon{font-size:18px}
+.login-input{width:100%;background:transparent;border:none;border-bottom:1px solid rgba(184,147,90,.3);color:var(--cream);font-family:'DM Mono',monospace;font-size:14px;padding:12px 0;margin-bottom:14px;outline:none;letter-spacing:1px;transition:border-color .2s}
+.login-input::placeholder{color:rgba(184,147,90,.35)}
+.login-input:focus{border-bottom-color:var(--gold)}
+.enter-btn{width:100%;padding:14px;background:var(--gold);border:none;color:var(--dark);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;margin-top:4px}
+.login-error{color:#C4785A;font-size:10px;text-align:center;margin-top:10px;display:none}
+.login-hint{font-size:9px;color:rgba(184,147,90,.28);text-align:center;margin-top:14px;letter-spacing:.8px;line-height:1.7}
+
+/* ── SHELL ── */
+#shell{display:none;position:fixed;inset:0;flex-direction:column;background:var(--cream)}
+#shell.show{display:flex}
+
+/* topbar */
+.topbar{background:var(--dark);height:calc(52px + var(--safe-top));padding:var(--safe-top) 18px 0;display:flex;align-items:flex-end;padding-bottom:10px;justify-content:space-between;border-bottom:1px solid rgba(184,147,90,.2);flex-shrink:0;z-index:50}
+.topbar-left{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:300;color:var(--gold);letter-spacing:3px}
+.topbar-right{display:flex;align-items:center;gap:10px;position:relative}
+.role-badge{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;border:1px solid var(--gold);color:var(--gold)}
+.logout-btn{font-size:9px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:'DM Mono',monospace;letter-spacing:1px}
+
+/* notif */
+.notif-btn{position:relative;background:none;border:none;cursor:pointer;color:var(--muted);font-size:17px;padding:3px}
+.notif-dot{position:absolute;top:1px;right:1px;width:7px;height:7px;background:var(--danger);border-radius:50%;display:none}
+.notif-dot.show{display:block}
+.notif-panel{position:fixed;top:calc(52px + var(--safe-top));right:0;width:min(300px,92vw);background:var(--dark);border:1px solid rgba(184,147,90,.25);border-top:none;z-index:200;display:none;max-height:50vh;overflow-y:auto}
+.notif-panel.open{display:block;animation:fadeDown .2s ease}
+.notif-header{padding:11px 15px;border-bottom:1px solid rgba(184,147,90,.15);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);display:flex;justify-content:space-between}
+.notif-clear{font-size:9px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:'DM Mono',monospace}
+.notif-item{padding:10px 15px;border-bottom:1px solid rgba(255,255,255,.04);display:flex;gap:9px}
+.notif-item.unread{background:rgba(184,147,90,.06)}
+.notif-emoji{font-size:14px;flex-shrink:0}
+.notif-text{font-size:10px;color:var(--cream);line-height:1.5}
+.notif-time{font-size:9px;color:var(--muted);margin-top:2px}
+.notif-empty{padding:20px;text-align:center;font-size:10px;color:var(--muted)}
+
+/* scroll area */
+#scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.main{max-width:700px;margin:0 auto;padding:20px 16px calc(24px + var(--safe-bottom))}
+
+/* ── DIAS ── */
+.days-section{margin-bottom:10px}
+.days-section-title{font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.days-section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.day-card{background:white;border:1px solid var(--border);margin-bottom:8px;cursor:pointer;transition:all .2s;overflow:hidden}
+.day-card:hover{border-color:var(--gold-light)}
+.day-card.today{border-color:var(--gold);border-left:3px solid var(--gold)}
+.day-card.has-overdue{border-left:3px solid var(--danger)}
+.day-card-header{padding:14px 16px;display:flex;align-items:center;gap:14px}
+.day-card-date{flex-shrink:0}
+.day-date-main{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:var(--dark);line-height:1}
+.day-date-sub{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px}
+.day-card.today .day-date-main{color:var(--gold)}
+.day-pills{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.day-pill{font-size:9px;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border:1px solid}
+.pill-total{color:var(--muted);border-color:var(--border);background:var(--warm)}
+.pill-done{color:var(--success);border-color:rgba(74,124,95,.3);background:var(--success-light)}
+.pill-pending{color:var(--mid);border-color:var(--border)}
+.pill-overdue{color:var(--danger);border-color:rgba(184,90,90,.3);background:var(--danger-light)}
+.pill-cancelled{color:var(--muted);border-color:var(--border)}
+.day-chevron{color:var(--muted);font-size:12px;flex-shrink:0;transition:transform .2s}
+.day-card.open .day-chevron{transform:rotate(180deg)}
+.day-orders-wrap{display:none;border-top:1px solid var(--border);padding:12px}
+.day-card.open .day-orders-wrap{display:block;animation:fadeUp .2s ease}
+
+/* overdue banner */
+.overdue-banner{background:var(--danger-light);border:1px solid rgba(184,90,90,.25);padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;font-size:10px;color:var(--danger)}
+
+/* ── ORDER CARDS ── */
+.order-card{background:var(--cream);border:1px solid var(--border);display:grid;grid-template-columns:46px 1fr auto;align-items:stretch;margin-bottom:8px;transition:all .2s;overflow:hidden}
+.order-card:last-child{margin-bottom:0}
+.order-card.delivered{border-color:#C8DDD2;background:#FAFCFB}
+.order-card.cancelled{border-color:#E8C4C4;background:#FDF8F8;opacity:.75}
+.order-card.overdue-card{border-left:3px solid var(--danger)}
+.order-num{background:var(--warm);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:300;color:var(--muted);border-right:1px solid var(--border)}
+.order-card.delivered .order-num{background:var(--success-light);color:var(--success);border-right-color:#C8DDD2}
+.order-card.cancelled .order-num{background:#FDF0F0;color:var(--danger);border-right-color:#E8C4C4}
+.order-card.overdue-card .order-num{background:#FDF5F0;color:var(--danger)}
+.order-main{padding:12px 14px;min-width:0}
+.order-top{display:flex;align-items:baseline;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+.order-name{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:400;color:var(--dark)}
+.order-id{font-size:9px;color:var(--muted);letter-spacing:1px}
+.order-product{font-size:10px;color:var(--mid);margin-bottom:4px}
+.order-address{font-size:10px;color:var(--muted);line-height:1.4}
+.order-meta{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.tag{font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;border:1px solid}
+.tag-priority{background:#FDF0E6;color:#B8693A;border-color:#E8C4A0}
+.tag-normal{background:var(--warm);color:var(--muted);border-color:var(--border)}
+.tag-delivered{background:var(--success-light);color:var(--success);border-color:#C8DDD2}
+.tag-cancelled{background:var(--danger-light);color:var(--danger);border-color:#E8C4C4}
+.tag-photo{background:#F0F4FD;color:var(--info);border-color:#C0CBEA;cursor:pointer}
+.tag-overdue{background:var(--danger-light);color:var(--danger);border-color:rgba(184,90,90,.3)}
+.obs-section{margin-top:6px;padding-top:6px;border-top:1px dashed var(--border);display:flex;flex-direction:column;gap:4px}
+.obs-bubble{font-size:10px;line-height:1.4;padding:5px 8px}
+.obs-logistics{background:#FFF8EE;border-left:3px solid var(--gold);color:var(--mid)}
+.obs-seller{background:var(--info-light);border-left:3px solid var(--info);color:#3A4E6A}
+.obs-cancel{background:var(--danger-light);border-left:3px solid var(--danger);color:#7A3A3A}
+.obs-author{font-size:8px;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;opacity:.7}
+.order-action{padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border-left:1px solid var(--border);min-width:100px;flex-shrink:0}
+.order-card.delivered .order-action{border-left-color:#C8DDD2}
+.order-card.cancelled .order-action{border-left-color:#E8C4C4}
+.deliver-btn{width:100%;padding:8px 4px;background:var(--dark);color:var(--cream);border:none;font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:background .2s}
+.deliver-btn:hover,.deliver-btn:active{background:var(--success)}
+.delivery-info{text-align:center}
+.delivery-time{font-size:13px;color:var(--success);font-weight:500;letter-spacing:1px}
+.delivery-who{font-size:9px;color:var(--muted);margin-top:2px}
+.cancel-lbl{font-size:9px;color:var(--danger);text-align:center}
+.delete-btn{background:none;border:none;color:var(--border);cursor:pointer;font-size:12px;padding:2px}
+.delete-btn:hover{color:var(--danger)}
+.obs-btn{width:100%;padding:6px 4px;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s}
+.obs-btn:hover{border-color:var(--info);color:var(--info)}
+
+/* ── CÂMERA (logística) ── */
+.camera-area{background:var(--dark);border:1px solid rgba(184,147,90,.3);padding:24px 20px;margin-bottom:20px;text-align:center;position:relative;overflow:hidden}
+.camera-area::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(184,147,90,.07) 0%,transparent 70%)}
+.camera-area-title{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:300;color:var(--gold-light);letter-spacing:2px;margin-bottom:4px;position:relative}
+.camera-area-sub{font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:20px;position:relative}
+.camera-btn-wrap{position:relative;display:inline-block}
+.camera-big-btn{display:inline-flex;align-items:center;gap:10px;padding:13px 28px;background:var(--gold);border:none;color:var(--dark);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
+#camera-input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.photo-preview-wrap{margin-top:14px;display:none;position:relative}
+.photo-preview-img{width:100%;max-height:160px;object-fit:cover;border:1px solid rgba(184,147,90,.3);display:block}
+.ai-loading-overlay{position:absolute;inset:0;background:rgba(26,21,16,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.ai-loading-overlay.hidden{display:none}
+.ai-spinner{width:28px;height:28px;border:2px solid rgba(184,147,90,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+.ai-loading-text{font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
+
+/* ── FORM ── */
+.review-form{background:white;border:1px solid var(--border);padding:18px;margin-bottom:18px;display:none}
+.review-form.open{display:block;animation:fadeUp .3s ease}
+.review-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.review-header-title{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--dark)}
+.review-header-sub{font-size:9px;color:var(--success);letter-spacing:1px;margin-top:2px}
+.photo-thumb{width:58px;height:58px;object-fit:cover;border:1px solid var(--border);margin-left:auto;flex-shrink:0;cursor:pointer}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.form-input,.form-select,.form-textarea{background:var(--cream);border:1px solid var(--border);padding:8px 10px;font-family:'DM Mono',monospace;font-size:12px;color:var(--dark);outline:none;transition:border-color .2s;width:100%}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--gold)}
+.form-textarea{resize:vertical;min-height:52px}
+.form-input.ai-filled{border-color:rgba(184,147,90,.6);background:#FFFDF8}
+.btn-primary{background:var(--gold);color:var(--dark);border:none;padding:10px 22px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
+.btn-danger{background:var(--danger);color:white;border:none;padding:10px 22px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);padding:9px 20px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
+.btn-row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+
+/* ── PORTADOR VIEW ── */
+#carrier-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--dark)}
+.carrier-body{max-width:700px;margin:0 auto;padding:16px 14px calc(24px + var(--safe-bottom))}
+.carrier-progress{background:#1F1A14;border:1px solid rgba(184,147,90,.15);padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:16px}
+.carrier-prog-nums{display:flex;gap:18px}
+.carrier-prog-item{text-align:center}
+.carrier-prog-val{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300;color:var(--gold);line-height:1}
+.carrier-prog-val.done{color:var(--success)}
+.carrier-prog-val.muted{color:var(--muted)}
+.carrier-prog-label{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.carrier-prog-bar-wrap{flex:1}
+.carrier-prog-pct{font-size:9px;color:var(--muted);letter-spacing:1px;text-align:right;margin-bottom:5px}
+.carrier-prog-track{background:rgba(255,255,255,.06);height:4px}
+.carrier-prog-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--success));transition:width .5s ease}
+
+/* day section in carrier */
+.carrier-day-section{margin-bottom:18px}
+.carrier-day-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:6px 12px;margin-bottom:8px;display:inline-flex;align-items:center;gap:8px}
+.carrier-day-label.today-label{background:rgba(184,147,90,.12);color:var(--gold);border:1px solid rgba(184,147,90,.25)}
+.carrier-day-label.past-label{background:rgba(184,90,90,.08);color:var(--danger);border:1px solid rgba(184,90,90,.2)}
+
+.delivery-card{border:1px solid rgba(184,147,90,.18);background:#1F1A14;overflow:hidden;margin-bottom:10px;transition:all .2s}
+.delivery-card.done{border-color:rgba(74,124,95,.35);background:#141A16}
+.delivery-card.overdue-dc{border-left:3px solid var(--danger)}
+.delivery-card.cancelled-dc{border-color:rgba(184,90,90,.25);background:#1A1414;opacity:.65}
+.dc-header{padding:14px 16px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;user-select:none}
+.dc-num{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;color:rgba(184,147,90,.3);line-height:1;flex-shrink:0;min-width:30px}
+.delivery-card.done .dc-num{color:rgba(74,124,95,.4)}
+.dc-info{flex:1;min-width:0}
+.dc-order-id{font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:3px}
+.dc-name{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:300;color:#F0EAE0;line-height:1.2;margin-bottom:5px}
+.dc-product{font-size:9px;color:var(--muted);margin-bottom:6px}
+.dc-address{font-size:10px;color:#8A7A68;line-height:1.4}
+.dc-phone{font-size:10px;color:#8A7A68;margin-top:3px}
+.dc-status-badge{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.dc-badge{font-size:8px;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border:1px solid}
+.dc-badge-pending{color:var(--gold);border-color:rgba(184,147,90,.3)}
+.dc-badge-done{color:var(--success);border-color:rgba(74,124,95,.35);background:rgba(74,124,95,.08)}
+.dc-badge-cancelled{color:var(--danger);border-color:rgba(184,90,90,.3)}
+.dc-badge-overdue{color:var(--danger);border-color:rgba(184,90,90,.35);background:rgba(184,90,90,.08)}
+.dc-expand{font-size:10px;color:var(--muted);transition:transform .2s}
+.dc-expand.open{transform:rotate(180deg)}
+.dc-obs-log{margin:0 16px 8px;padding:8px 10px;background:rgba(184,147,90,.07);border-left:3px solid rgba(184,147,90,.35);font-size:10px;color:#C4A870;line-height:1.4}
+.dc-obs-log-label{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(184,147,90,.45);margin-bottom:3px}
+.dc-obs-seller{margin:0 16px 8px;padding:8px 10px;background:rgba(90,122,184,.07);border-left:3px solid rgba(90,122,184,.35);font-size:10px;color:#9AB0D8;line-height:1.4}
+.dc-obs-sell-label{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(90,122,184,.5);margin-bottom:3px}
+.dc-cancel-banner{margin:0 16px 10px;padding:8px 10px;background:rgba(184,90,90,.08);border-left:3px solid rgba(184,90,90,.35);font-size:10px;color:#D49090;line-height:1.4}
+
+.dc-action-area{padding:0 16px 14px;display:none}
+.dc-action-area.open{display:block;animation:fadeUp .2s ease}
+.protocol-box{background:rgba(255,255,255,.03);border:1px solid rgba(184,147,90,.15);padding:14px}
+.protocol-title{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.protocol-title::after{content:'';flex:1;height:1px;background:rgba(184,147,90,.15)}
+.protocol-field{margin-bottom:10px}
+.protocol-label{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;display:block}
+.protocol-input{background:rgba(255,255,255,.04);border:1px solid rgba(184,147,90,.18);padding:9px 10px;font-family:'DM Mono',monospace;font-size:13px;color:#E8DDD0;outline:none;width:100%;transition:border-color .2s}
+.protocol-input:focus{border-color:var(--gold)}
+.protocol-input::placeholder{color:rgba(184,147,90,.22)}
+.protocol-textarea{resize:vertical;min-height:64px}
+.confirm-deliver-btn{width:100%;padding:13px;background:var(--success);border:none;color:white;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;cursor:pointer;margin-top:12px}
+
+.protocol-done{padding:12px 16px;background:rgba(74,124,95,.07);border:1px solid rgba(74,124,95,.22);margin:0 16px 14px}
+.protocol-done-title{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--success);margin-bottom:8px}
+.protocol-done-row{display:flex;gap:8px;margin-bottom:5px}
+.protocol-done-key{font-size:8px;color:var(--muted);letter-spacing:.8px;width:72px;flex-shrink:0}
+.protocol-done-val{font-size:10px;color:#B8DEC8}
+.protocol-done-obs{font-size:10px;color:#8AB8A0;font-style:italic;line-height:1.4}
+
+/* ── MODAIS ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(26,21,16,.8);display:none;align-items:center;justify-content:center;z-index:300;backdrop-filter:blur(2px);padding:16px}
+.modal-overlay.open{display:flex;animation:fadeIn .2s ease}
+.modal{background:var(--cream);border:1px solid var(--border);padding:26px 22px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;animation:fadeUp .25s ease}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:300;color:var(--dark);margin-bottom:4px}
+.modal-sub{font-size:9px;color:var(--muted);letter-spacing:1px;margin-bottom:20px}
+.modal-form{display:flex;flex-direction:column;gap:11px}
+.photo-full{width:100%;max-height:60vh;object-fit:contain;display:block}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:36px 16px;border:1px dashed var(--border)}
+.empty-icon{font-size:28px;margin-bottom:10px;opacity:.4}
+.empty-text{font-size:11px;color:var(--muted);letter-spacing:1px}
+
+/* ── INSTALL BANNER ── */
+#install-banner{display:none;background:rgba(184,147,90,.12);border:1px solid rgba(184,147,90,.3);padding:10px 14px;margin-bottom:12px;align-items:center;gap:10px}
+#install-banner.show{display:flex}
+.install-text{font-size:10px;color:var(--mid);letter-spacing:.5px;flex:1;line-height:1.4}
+.install-btn{background:var(--gold);color:var(--dark);border:none;padding:8px 14px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;flex-shrink:0}
+.install-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;flex-shrink:0}
+
+/* ── TOAST ── */
+#toast-area{position:fixed;bottom:calc(20px + var(--safe-bottom));right:16px;z-index:400;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.toast{background:var(--dark);border:1px solid rgba(184,147,90,.3);padding:10px 14px;min-width:220px;max-width:280px;animation:slideIn .3s ease forwards;display:flex;gap:8px}
+.toast-icon{font-size:14px;flex-shrink:0}
+.toast-text{font-size:10px;color:var(--cream);line-height:1.4}
+.toast.success{border-left:3px solid var(--success)}
+.toast.danger{border-left:3px solid var(--danger)}
+.toast.info{border-left:3px solid var(--gold)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes slideIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+@media(max-width:480px){
+  .form-grid{grid-template-columns:1fr}
+  .order-card{grid-template-columns:40px 1fr}
+  .order-action{grid-column:1/-1;flex-direction:row;justify-content:flex-end;border-left:none;border-top:1px solid var(--border);padding:8px 10px;min-width:unset;gap:6px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">PW</div>
+    <div class="login-sub">Sistema de Entregas</div>
+    <div class="role-grid">
+      <button class="role-btn active" onclick="selectRole('logistics')" id="role-logistics"><span class="role-icon">📋</span>Logística</button>
+      <button class="role-btn" onclick="selectRole('seller')" id="role-seller"><span class="role-icon">💼</span>Vendedora</button>
+      <button class="role-btn" onclick="selectRole('carrier')" id="role-carrier"><span class="role-icon">🚗</span>Portador</button>
+    </div>
+    <input class="login-input" type="text" id="login-name" placeholder="Seu nome" autocomplete="off">
+    <input class="login-input" type="password" id="login-pass" placeholder="Senha" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="enter-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-hint">Logística: pw2024 &nbsp;·&nbsp; Vendedora: venda24 &nbsp;·&nbsp; Portador: entrega</div>
+  </div>
+</div>
+
+<!-- SHELL (logística + vendedora) -->
+<div id="shell">
+  <div class="topbar">
+    <div class="topbar-left">PW Entregas</div>
+    <div class="topbar-right">
+      <span style="font-size:9px;color:var(--muted)" id="user-name-display"></span>
+      <div class="role-badge" id="user-badge"></div>
+      <button class="notif-btn" onclick="toggleNotif('notif-panel','notif-dot')" id="notif-btn-el">🔔<span class="notif-dot" id="notif-dot"></span></button>
+      <div class="notif-panel" id="notif-panel">
+        <div class="notif-header">Notificações<button class="notif-clear" onclick="clearNotifs('notif-panel',false)">Limpar</button></div>
+        <div id="notif-list"></div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+  <div id="scroll-area">
+    <div class="main">
+      <div id="install-banner">
+        <div class="install-text">📲 Instale o app na tela inicial do seu celular para acesso rápido</div>
+        <button class="install-btn" id="install-btn-el" onclick="installApp()">Instalar</button>
+        <button class="install-close" onclick="document.getElementById('install-banner').classList.remove('show')">×</button>
+      </div>
+
+      <!-- logística: câmera -->
+      <div id="logistics-cam" style="display:none">
+        <div class="camera-area">
+          <div class="camera-area-title">Fotografar Pedido</div>
+          <div class="camera-area-sub">A IA lê a etiqueta e preenche automaticamente</div>
+          <div class="camera-btn-wrap">
+            <button class="camera-big-btn">📷&nbsp; Tirar Foto do Pedido</button>
+            <input type="file" id="camera-input" accept="image/*" capture="environment" onchange="handlePhoto(event)">
+          </div>
+          <div class="photo-preview-wrap" id="photo-preview-wrap">
+            <img id="photo-preview-img" class="photo-preview-img" src="" alt="">
+            <div class="ai-loading-overlay" id="ai-loading"><div class="ai-spinner"></div><div class="ai-loading-text">IA analisando...</div></div>
+          </div>
+        </div>
+        <div class="review-form" id="review-form">
+          <div class="review-header">
+            <div><div class="review-header-title">Revisar dados</div><div class="review-header-sub">✦ Preenchido pela IA</div></div>
+            <img id="review-thumb" class="photo-thumb" src="" alt="" onclick="openPhotoModal(this.src)">
+          </div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Cliente *</label><input class="form-input" id="f-client"></div>
+            <div class="form-group"><label class="form-label">Nº Pedido *</label><input class="form-input" id="f-ordernum" placeholder="#1042"></div>
+            <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" id="f-phone"></div>
+            <div class="form-group"><label class="form-label">Qtd. pares</label><input class="form-input" id="f-pairs" placeholder="2 pares"></div>
+            <div class="form-group"><label class="form-label">Prioridade</label><select class="form-select" id="f-priority"><option value="normal">Normal</option><option value="urgente">Urgente</option></select></div>
+            <div class="form-group full"><label class="form-label">Endereço *</label><input class="form-input" id="f-address"></div>
+            <div class="form-group full"><label class="form-label">Obs. para portador</label><textarea class="form-textarea" id="f-obs"></textarea></div>
+          </div>
+          <div class="btn-row"><button class="btn-ghost" onclick="cancelReview()">Descartar</button><button class="btn-primary" onclick="saveOrder()">Salvar Pedido</button></div>
+        </div>
+      </div>
+
+      <!-- lista de dias -->
+      <div id="days-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PORTADOR VIEW -->
+<div id="carrier-shell" style="display:none;position:fixed;inset:0;flex-direction:column;background:var(--dark)">
+  <div class="topbar">
+    <div class="topbar-left">PW Entregas</div>
+    <div class="topbar-right">
+      <span style="font-size:9px;color:var(--muted)" id="carrier-name-display"></span>
+      <div class="role-badge" style="border-color:var(--gold);color:var(--gold)">⬡ Portador</div>
+      <button class="notif-btn" onclick="toggleNotif('carrier-notif-panel','carrier-notif-dot')" id="carrier-notif-btn-el">🔔<span class="notif-dot" id="carrier-notif-dot"></span></button>
+      <div class="notif-panel" id="carrier-notif-panel">
+        <div class="notif-header">Notificações<button class="notif-clear" onclick="clearNotifs('carrier-notif-panel',true)">Limpar</button></div>
+        <div id="carrier-notif-list"></div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+  <div id="carrier-scroll" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div class="carrier-body">
+      <div class="carrier-progress">
+        <div class="carrier-prog-nums">
+          <div class="carrier-prog-item"><div class="carrier-prog-val" id="c-total">0</div><div class="carrier-prog-label">Total</div></div>
+          <div class="carrier-prog-item"><div class="carrier-prog-val done" id="c-done">0</div><div class="carrier-prog-label">Entregues</div></div>
+          <div class="carrier-prog-item"><div class="carrier-prog-val muted" id="c-pending">0</div><div class="carrier-prog-label">Pendentes</div></div>
+        </div>
+        <div class="carrier-prog-bar-wrap">
+          <div class="carrier-prog-pct" id="c-pct">0%</div>
+          <div class="carrier-prog-track"><div class="carrier-prog-fill" id="c-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div id="carrier-days"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAIS -->
+<div class="modal-overlay" id="obs-modal">
+  <div class="modal">
+    <div class="modal-title">Observação</div>
+    <div class="modal-sub" id="obs-modal-sub"></div>
+    <div class="modal-form"><div class="form-group"><label class="form-label">Sua observação *</label><textarea class="form-textarea" id="obs-text" style="min-height:80px"></textarea></div></div>
+    <div class="btn-row" style="margin-top:16px"><button class="btn-ghost" onclick="closeModal('obs-modal')">Cancelar</button><button class="btn-primary" onclick="submitObs()">Enviar</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="cancel-modal">
+  <div class="modal">
+    <div class="modal-title" style="color:var(--danger)">Cancelar Pedido</div>
+    <div class="modal-sub" id="cancel-modal-sub"></div>
+    <div class="modal-form"><div class="form-group"><label class="form-label">Motivo *</label><textarea class="form-textarea" id="cancel-reason" style="min-height:70px"></textarea></div></div>
+    <div class="btn-row" style="margin-top:16px"><button class="btn-ghost" onclick="closeModal('cancel-modal')">Voltar</button><button class="btn-danger" onclick="confirmCancel()">Confirmar</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="lobs-modal">
+  <div class="modal">
+    <div class="modal-title">Obs. Logística</div>
+    <div class="modal-sub" id="lobs-modal-sub"></div>
+    <div class="modal-form"><div class="form-group"><label class="form-label">Observação</label><textarea class="form-textarea" id="lobs-text" style="min-height:70px"></textarea></div></div>
+    <div class="btn-row" style="margin-top:16px"><button class="btn-ghost" onclick="closeModal('lobs-modal')">Cancelar</button><button class="btn-primary" onclick="submitLObs()">Salvar</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title">Editar Pedido</div>
+    <div class="modal-sub" id="edit-modal-sub"></div>
+    <div id="edit-photo-wrap" style="margin-bottom:14px;display:none">
+      <div class="form-label" style="margin-bottom:6px">Foto</div>
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <img id="edit-cur-photo" style="width:64px;height:64px;object-fit:cover;border:1px solid var(--border);cursor:pointer;flex-shrink:0" src="" onclick="openPhotoModal(this.src)">
+        <div><div style="font-size:9px;color:var(--muted);margin-bottom:6px">Toque na imagem para ver · Troque abaixo</div>
+        <div style="position:relative;display:inline-block"><button class="btn-ghost" style="font-size:8px;padding:6px 12px">📷 Trocar</button><input type="file" accept="image/*" id="edit-photo-inp" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="handleEditPhoto(event,'edit-new-prev','edit-new-img')"></div>
+        <div id="edit-new-prev" style="display:none;margin-top:6px"><img id="edit-new-img" style="width:56px;height:56px;object-fit:cover;border:1px solid rgba(184,147,90,.5)"><div style="font-size:8px;color:var(--success);margin-top:3px">✓ Nova foto</div></div></div>
+      </div>
+    </div>
+    <div id="edit-no-photo-wrap" style="margin-bottom:14px;display:none">
+      <div class="form-label" style="margin-bottom:6px">Foto</div>
+      <div style="position:relative;display:inline-block"><button class="btn-ghost" style="font-size:8px;padding:6px 12px">📷 Adicionar</button><input type="file" accept="image/*" id="edit-photo-inp2" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="handleEditPhoto(event,'edit-new-prev2','edit-new-img2')"></div>
+      <div id="edit-new-prev2" style="display:none;margin-top:6px"><img id="edit-new-img2" style="width:56px;height:56px;object-fit:cover;border:1px solid rgba(184,147,90,.5)"><div style="font-size:8px;color:var(--success);margin-top:3px">✓ Foto adicionada</div></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Cliente *</label><input class="form-input" id="e-client"></div>
+      <div class="form-group"><label class="form-label">Nº Pedido</label><input class="form-input" id="e-ordernum"></div>
+      <div class="form-group"><label class="form-label">Telefone</label><input class="form-input" id="e-phone"></div>
+      <div class="form-group"><label class="form-label">Qtd. pares</label><input class="form-input" id="e-pairs"></div>
+      <div class="form-group"><label class="form-label">Prioridade</label><select class="form-select" id="e-priority"><option value="normal">Normal</option><option value="urgente">Urgente</option></select></div>
+      <div class="form-group full"><label class="form-label">Endereço *</label><input class="form-input" id="e-address"></div>
+      <div class="form-group full"><label class="form-label">Obs. portador</label><textarea class="form-textarea" id="e-obs"></textarea></div>
+    </div>
+    <div class="form-group" style="margin-top:10px;padding-top:12px;border-top:1px dashed var(--border)">
+      <label class="form-label" style="color:var(--gold)">Motivo da alteração</label>
+      <input class="form-input" id="e-reason" placeholder="Ex: endereço corrigido, pedido suspenso...">
+    </div>
+    <div class="btn-row" style="margin-top:16px"><button class="btn-ghost" onclick="closeModal('edit-modal')">Cancelar</button><button class="btn-primary" onclick="saveEdit()">Salvar</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="deliver-modal">
+  <div class="modal">
+    <div class="modal-title">Confirmar Entrega</div>
+    <div class="modal-sub" id="deliver-modal-sub"></div>
+    <div class="modal-form">
+      <div class="form-group"><label class="form-label">Recebido por *</label><input class="form-input" id="d-receiver" placeholder="Nome de quem recebeu"></div>
+      <div class="form-group"><label class="form-label">Observação</label><input class="form-input" id="d-note" placeholder="Portaria, vizinho..."></div>
+    </div>
+    <div class="btn-row" style="margin-top:16px"><button class="btn-ghost" onclick="closeModal('deliver-modal')">Cancelar</button><button class="btn-primary" onclick="confirmDeliverApp()">✓ Confirmar</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="photo-modal">
+  <div class="modal" style="max-width:480px;padding:12px">
+    <img id="photo-full-img" class="photo-full" src="" alt="">
+    <div class="btn-row" style="margin-top:10px"><button class="btn-ghost" onclick="closeModal('photo-modal')">Fechar</button></div>
+  </div>
+</div>
+<div id="toast-area"></div>
+
+<script>
+// ── CONFIG ──
+const PASS={logistics:'pw2024',seller:'venda24',carrier:'entrega'};
+const ROLE_LABEL={logistics:'⬡ Logística',seller:'⬡ Vendedora',carrier:'⬡ Portador'};
+let role='logistics',user='',filterMode='all',pendingPhoto=null;
+let _obsId=null,_cancelId=null,_lobsId=null,_editId=null,_editNewPhoto=null,_deliverId=null;
+let notifications=[];
+let deferredInstall=null;
+
+// ── STORAGE KEY ──
+const STORE_KEY='pw_orders_v2';
+
+// ── ORDERS ── (persiste no localStorage)
+function loadOrders(){
+  try{const s=localStorage.getItem(STORE_KEY);if(s)return JSON.parse(s);}catch(e){}
+  // seed
+  const today=dateKey(new Date());
+  const yesterday=dateKey(new Date(Date.now()-86400000));
+  return [
+    {id:'PW001',orderNum:'#1038',client:'Fernanda Rocha',product:'1 par · Mary Jane Caramelo nº 37',phone:'(11) 98754-3210',address:'Rua Oscar Freire, 850 — Jardins, SP',priority:'urgente',obsLogistics:'Deixar com portaria. Interfone 42.',obsSellers:[],photo:null,status:'pending',date:today,deliveredAt:null,deliveredBy:null,deliveredNote:null,cancelReason:null},
+    {id:'PW002',orderNum:'#1041',client:'Beatriz Almeida',product:'2 pares · Scarpin Nude nº 38',phone:'(11) 91234-5678',address:'Al. Santos, 211 apto 84 — Cerqueira César, SP',priority:'normal',obsLogistics:'',obsSellers:[],photo:null,status:'pending',date:today,deliveredAt:null,deliveredBy:null,deliveredNote:null,cancelReason:null},
+    {id:'PW003',orderNum:'#1035',client:'Larissa Monteiro',product:'1 par · Sapatilha Listras nº 36',phone:'(11) 97777-2222',address:'Rua Haddock Lobo, 1408 — Jardim Paulista, SP',priority:'normal',obsLogistics:'Ligar antes de chegar.',obsSellers:[],photo:null,status:'pending',date:yesterday,deliveredAt:null,deliveredBy:null,deliveredNote:null,cancelReason:null}
+  ];
+}
+function saveOrders(){try{localStorage.setItem(STORE_KEY,JSON.stringify(orders));}catch(e){}}
+let orders=loadOrders();
+
+// ── DATE HELPERS ──
+function dateKey(d){return d.toISOString().slice(0,10);}
+function today(){return dateKey(new Date());}
+function fmtDate(k){
+  const d=new Date(k+'T12:00:00');
+  const t=today();
+  if(k===t)return{main:'Hoje',sub:d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'})};
+  const y=dateKey(new Date(Date.now()-86400000));
+  if(k===y)return{main:'Ontem',sub:d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'})};
+  return{main:d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),sub:d.toLocaleDateString('pt-BR',{weekday:'short',year:'numeric'})};
+}
+
+// ── PWA ──
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;document.getElementById('install-banner').classList.add('show');});
+window.addEventListener('appinstalled',()=>{document.getElementById('install-banner').classList.remove('show');deferredInstall=null;});
+async function installApp(){if(deferredInstall){deferredInstall.prompt();const r=await deferredInstall.userChoice;if(r.outcome==='accepted')document.getElementById('install-banner').classList.remove('show');deferredInstall=null;}}
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+
+// ── LOGIN ──
+function selectRole(r){role=r;['logistics','seller','carrier'].forEach(x=>document.getElementById('role-'+x).classList.toggle('active',x===r));}
+function doLogin(){
+  const n=document.getElementById('login-name').value.trim();
+  const p=document.getElementById('login-pass').value;
+  const err=document.getElementById('login-error');
+  if(!n){err.style.display='block';err.textContent='Digite seu nome.';return}
+  if(p!==PASS[role]){err.style.display='block';err.textContent='Senha incorreta.';return}
+  user=n;err.style.display='none';
+  document.getElementById('login-screen').style.display='none';
+  if(role==='carrier'){
+    const cs=document.getElementById('carrier-shell');cs.style.display='flex';
+    document.getElementById('carrier-name-display').textContent=user;
+    renderCarrier();renderNotifPanel('carrier-notif-list',true);
+  } else {
+    const sh=document.getElementById('shell');sh.style.display='flex';
+    document.getElementById('user-badge').textContent=ROLE_LABEL[role];
+    document.getElementById('user-name-display').textContent=user;
+    document.getElementById('logistics-cam').style.display=role==='logistics'?'block':'none';
+    renderDays();renderNotifPanel('notif-list',false);
+  }
+}
+function doLogout(){
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('shell').style.display='none';
+  document.getElementById('carrier-shell').style.display='none';
+  document.getElementById('login-name').value='';document.getElementById('login-pass').value='';
+  cancelReview();user='';
+}
+
+// ── NOTIFS ──
+function addNotif(emoji,text,targets){
+  const n={id:Date.now(),emoji,text,time:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),read:false,target:targets};
+  notifications.unshift(n);
+  const isCarrier=role==='carrier';
+  if(!targets||targets.includes(role)){showToast(emoji,text,'info');}
+  renderNotifPanel('notif-list',false);renderNotifPanel('carrier-notif-list',true);
+  updateNotifDot('notif-dot',false);updateNotifDot('carrier-notif-dot',true);
+}
+function updateNotifDot(dotId,forCarrier){
+  const rel=notifications.filter(n=>!n.target||n.target.includes(forCarrier?'carrier':role));
+  const unread=rel.filter(n=>!n.read).length;
+  document.getElementById(dotId)?.classList.toggle('show',unread>0);
+}
+function renderNotifPanel(listId,forCarrier){
+  const r=forCarrier?'carrier':role;
+  const rel=notifications.filter(n=>!n.target||n.target.includes(r));
+  const el=document.getElementById(listId);if(!el)return;
+  el.innerHTML=rel.length?rel.map(n=>`<div class="notif-item ${n.read?'':'unread'}"><span class="notif-emoji">${n.emoji}</span><div><div class="notif-text">${n.text}</div><div class="notif-time">${n.time}</div></div></div>`).join(''):'<div class="notif-empty">Nenhuma notificação</div>';
+}
+function toggleNotif(panelId,dotId){
+  const p=document.getElementById(panelId);p.classList.toggle('open');
+  if(p.classList.contains('open')){
+    const forCarrier=panelId.includes('carrier');
+    const r=forCarrier?'carrier':role;
+    notifications.forEach(n=>{if(!n.target||n.target.includes(r))n.read=true;});
+    document.getElementById(dotId).classList.remove('show');
+    renderNotifPanel(panelId.replace('-panel','-list'),forCarrier);
+  }
+}
+function clearNotifs(panelId,forCarrier){
+  const r=forCarrier?'carrier':role;
+  notifications=notifications.filter(n=>n.target&&!n.target.includes(r));
+  renderNotifPanel(panelId.replace('-panel','-list'),forCarrier);
+  document.getElementById(panelId).classList.remove('open');
+}
+document.addEventListener('click',e=>{
+  ['notif-panel','carrier-notif-panel'].forEach(id=>{
+    const p=document.getElementById(id);
+    if(p&&p.classList.contains('open')&&!p.contains(e.target)&&!e.target.closest('.notif-btn'))p.classList.remove('open');
+  });
+});
+
+// ── TOAST ──
+function showToast(icon,text,type='info'){
+  const a=document.getElementById('toast-area');
+  const t=document.createElement('div');t.className=`toast ${type}`;
+  t.innerHTML=`<span class="toast-icon">${icon}</span><span class="toast-text">${text}</span>`;
+  a.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .4s';setTimeout(()=>t.remove(),400)},3200);
+}
+
+// ── CÂMERA / IA ──
+function handlePhoto(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=async function(ev){
+    pendingPhoto=ev.target.result;
+    document.getElementById('photo-preview-img').src=pendingPhoto;
+    document.getElementById('photo-preview-wrap').style.display='block';
+    document.getElementById('ai-loading').classList.remove('hidden');
+    document.getElementById('review-form').classList.remove('open');
+    try{const d=await extractWithAI(pendingPhoto);fillForm(d);}catch(err){fillForm({});}
+    document.getElementById('ai-loading').classList.add('hidden');
+  };
+  r.readAsDataURL(file);e.target.value='';
+}
+async function extractWithAI(b64){
+  const[meta,data]=b64.split(','),mime=meta.match(/:(.*?);/)[1];
+  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mime,data}},{type:'text',text:'Analise esta imagem de pedido/etiqueta/nota de sapatos. Responda APENAS JSON:\n{"client":"nome","orderNum":"número","phone":"tel ou vazio","address":"endereço ou vazio","pairs":"qtd pares ou vazio","notes":"obs ou vazio"}\nNão invente.'}]}]})});
+  const j=await res.json();
+  return JSON.parse((j.content.find(b=>b.type==='text')?.text||'{}').replace(/```json|```/g,'').trim());
+}
+function fillForm(d){
+  const m={'f-client':d.client||'','f-ordernum':d.orderNum||'','f-phone':d.phone||'','f-address':d.address||'','f-pairs':d.pairs||'','f-obs':d.notes||''};
+  for(const[id,v]of Object.entries(m)){const el=document.getElementById(id);el.value=v;el.classList.toggle('ai-filled',v!=='');}
+  document.getElementById('review-thumb').src=pendingPhoto;
+  document.getElementById('review-form').classList.add('open');
+}
+function cancelReview(){
+  document.getElementById('review-form').classList.remove('open');
+  document.getElementById('photo-preview-wrap').style.display='none';
+  pendingPhoto=null;
+  ['f-client','f-ordernum','f-phone','f-address','f-pairs','f-obs'].forEach(id=>{const el=document.getElementById(id);el.value='';el.classList.remove('ai-filled');});
+}
+function saveOrder(){
+  const client=document.getElementById('f-client').value.trim();
+  const address=document.getElementById('f-address').value.trim();
+  if(!client||!address){alert('Nome e endereço são obrigatórios.');return}
+  const pairs=document.getElementById('f-pairs').value.trim();
+  const o={
+    id:'PW'+String(Date.now()).slice(-6),
+    orderNum:document.getElementById('f-ordernum').value.trim()||'#'+String(Date.now()).slice(-4),
+    client,product:pairs?pairs+' · pedido':'pedido',
+    phone:document.getElementById('f-phone').value.trim(),
+    address,priority:document.getElementById('f-priority').value,
+    obsLogistics:document.getElementById('f-obs').value.trim(),
+    obsSellers:[],photo:pendingPhoto,
+    status:'pending',date:today(),
+    deliveredAt:null,deliveredBy:null,deliveredNote:null,cancelReason:null
+  };
+  orders.unshift(o);saveOrders();
+  addNotif('📦',`Novo pedido: ${o.orderNum} · ${o.client}`,['seller','carrier']);
+  cancelReview();renderDays();showToast('✅','Pedido salvo!','success');
+}
+
+// ── AÇÕES APP ──
+function openObsModal(id){_obsId=id;const o=orders.find(x=>x.id===id);document.getElementById('obs-modal-sub').textContent=o.orderNum+' · '+o.client;document.getElementById('obs-text').value='';document.getElementById('obs-modal').classList.add('open');setTimeout(()=>document.getElementById('obs-text').focus(),100);}
+function submitObs(){const txt=document.getElementById('obs-text').value.trim();if(!txt){alert('Digite a observação.');return}const o=orders.find(x=>x.id===_obsId);o.obsSellers.push({author:user,text:txt,time:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})});saveOrders();addNotif('💬',`Obs de ${user} em ${o.orderNum}: "${txt.slice(0,50)}"`,['logistics','carrier']);closeModal('obs-modal');renderDays();showToast('💬','Observação enviada!','info');}
+function openCancelModal(id){_cancelId=id;const o=orders.find(x=>x.id===id);document.getElementById('cancel-modal-sub').textContent=o.orderNum+' · '+o.client;document.getElementById('cancel-reason').value='';document.getElementById('cancel-modal').classList.add('open');setTimeout(()=>document.getElementById('cancel-reason').focus(),100);}
+function confirmCancel(){const r=document.getElementById('cancel-reason').value.trim();if(!r){alert('Informe o motivo.');return}const o=orders.find(x=>x.id===_cancelId);o.status='cancelled';o.cancelReason=r;o.obsSellers.push({author:user,text:'❌ CANCELADO: '+r,time:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),isCancel:true});saveOrders();addNotif('❌',`CANCELADO: ${o.orderNum} · ${o.client} — ${r}`,['logistics','carrier']);closeModal('cancel-modal');renderDays();showToast('❌','Cancelamento notificado!','danger');}
+function openLObsModal(id){_lobsId=id;const o=orders.find(x=>x.id===id);document.getElementById('lobs-modal-sub').textContent=o.orderNum+' · '+o.client;document.getElementById('lobs-text').value=o.obsLogistics||'';document.getElementById('lobs-modal').classList.add('open');setTimeout(()=>document.getElementById('lobs-text').focus(),100);}
+function submitLObs(){const txt=document.getElementById('lobs-text').value.trim();const o=orders.find(x=>x.id===_lobsId);o.obsLogistics=txt;saveOrders();addNotif('📋',`Logística atualizou instrução: ${o.orderNum}`,['seller','carrier']);closeModal('lobs-modal');renderDays();showToast('📋','Instrução atualizada!','info');}
+function deleteOrder(id){if(!confirm('Remover este pedido?'))return;orders=orders.filter(o=>o.id!==id);saveOrders();renderDays();}
+function openDeliverModal(id){_deliverId=id;const o=orders.find(x=>x.id===id);document.getElementById('deliver-modal-sub').textContent=o.orderNum+' · '+o.client;document.getElementById('d-receiver').value='';document.getElementById('d-note').value='';document.getElementById('deliver-modal').classList.add('open');setTimeout(()=>document.getElementById('d-receiver').focus(),100);}
+function confirmDeliverApp(){const recv=document.getElementById('d-receiver').value.trim();if(!recv){alert('Informe quem recebeu.');return}const o=orders.find(x=>x.id===_deliverId);o.status='delivered';o.deliveredAt=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});o.deliveredBy=recv;o.deliveredNote=document.getElementById('d-note').value.trim();saveOrders();addNotif('✅',`Entregue: ${o.orderNum} · ${o.client} — ${recv} às ${o.deliveredAt}`,['seller','logistics']);closeModal('deliver-modal');renderDays();showToast('✅','Entrega confirmada!','success');}
+
+// ── EDIÇÃO ──
+function openEditModal(id){
+  _editId=id;_editNewPhoto=null;
+  const o=orders.find(x=>x.id===id);
+  document.getElementById('edit-modal-sub').textContent=o.orderNum+' · '+o.client;
+  document.getElementById('e-client').value=o.client||'';
+  document.getElementById('e-ordernum').value=o.orderNum||'';
+  document.getElementById('e-phone').value=o.phone||'';
+  document.getElementById('e-address').value=o.address||'';
+  document.getElementById('e-obs').value=o.obsLogistics||'';
+  document.getElementById('e-priority').value=o.priority||'normal';
+  document.getElementById('e-reason').value='';
+  const pm=( o.product||'').match(/^(\d+ par[es]*)/i);
+  document.getElementById('e-pairs').value=pm?pm[1]:'';
+  const hp=!!o.photo;
+  document.getElementById('edit-photo-wrap').style.display=hp?'block':'none';
+  document.getElementById('edit-no-photo-wrap').style.display=hp?'none':'block';
+  if(hp)document.getElementById('edit-cur-photo').src=o.photo;
+  document.getElementById('edit-new-prev').style.display='none';
+  document.getElementById('edit-new-prev2').style.display='none';
+  document.getElementById('edit-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('e-client').focus(),100);
+}
+function handleEditPhoto(e,prevId,imgId){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=function(ev){_editNewPhoto=ev.target.result;document.getElementById(imgId).src=_editNewPhoto;document.getElementById(prevId).style.display='block';};
+  r.readAsDataURL(file);e.target.value='';
+}
+function saveEdit(){
+  const client=document.getElementById('e-client').value.trim();
+  const address=document.getElementById('e-address').value.trim();
+  if(!client||!address){alert('Nome e endereço obrigatórios.');return}
+  const o=orders.find(x=>x.id===_editId);
+  const reason=document.getElementById('e-reason').value.trim();
+  const changes=[];
+  if(o.client!==client)changes.push('nome');
+  if(o.address!==address)changes.push('endereço');
+  const ph=document.getElementById('e-phone').value.trim();if(o.phone!==ph)changes.push('telefone');
+  const pr=document.getElementById('e-priority').value;if(o.priority!==pr)changes.push('prioridade');
+  if(_editNewPhoto)changes.push('foto');
+  const pairs=document.getElementById('e-pairs').value.trim();
+  const prod=pairs?pairs+' · pedido':'pedido';if(o.product!==prod)changes.push('produto');
+  const obs=document.getElementById('e-obs').value.trim();if(o.obsLogistics!==obs)changes.push('instrução');
+  o.client=client;o.orderNum=document.getElementById('e-ordernum').value.trim()||o.orderNum;
+  o.phone=ph;o.address=address;o.priority=pr;o.product=prod;o.obsLogistics=obs;
+  if(_editNewPhoto)o.photo=_editNewPhoto;
+  saveOrders();
+  const changed=changes.length?changes.join(', '):'dados';
+  const msg=reason?`Pedido ${o.orderNum} atualizado (${changed}) — ${reason}`:`Pedido ${o.orderNum} atualizado: ${changed}`;
+  addNotif('✏️',msg,['carrier','seller']);
+  closeModal('edit-modal');renderDays();showToast('✏️','Pedido atualizado!','info');
+}
+
+// ── MODAL ──
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function openPhotoModal(src){if(!src||src==='')return;document.getElementById('photo-full-img').src=src;document.getElementById('photo-modal').classList.add('open');}
+['obs-modal','cancel-modal','lobs-modal','edit-modal','deliver-modal','photo-modal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))closeModal(id);});
+});
+
+// ── RENDER DIAS (logística + vendedora) ──
+function getGroupedDays(){
+  const groups={};
+  const t=today();
+  orders.forEach(o=>{
+    const dk=o.date||t;
+    if(!groups[dk])groups[dk]={date:dk,orders:[]};
+    groups[dk].orders.push(o);
+  });
+  // pedidos pendentes de dias anteriores também aparecem no dia de hoje como overdue
+  const overdue=orders.filter(o=>o.status==='pending'&&o.date&&o.date<t);
+  if(overdue.length){
+    if(!groups[t])groups[t]={date:t,orders:[...orders.filter(o=>o.date===t)]};
+    // add overdue flag
+    groups[t]._overdue=overdue;
+  }
+  return Object.values(groups).sort((a,b)=>b.date.localeCompare(a.date));
+}
+
+let openDays=new Set([today()]);
+
+function renderDays(){
+  const groups=getGroupedDays();
+  const container=document.getElementById('days-list');
+  if(!groups.length){container.innerHTML='<div class="empty"><div class="empty-icon">📦</div><div class="empty-text">Nenhum pedido cadastrado</div></div>';return;}
+  container.innerHTML=groups.map(g=>renderDayCard(g)).join('');
+}
+
+function renderDayCard(g){
+  const t=today();
+  const isToday=g.date===t;
+  const {main,sub}=fmtDate(g.date);
+  const dayOrders=orders.filter(o=>o.date===g.date);
+  const total=dayOrders.length;
+  const done=dayOrders.filter(o=>o.status==='delivered').length;
+  const cancelled=dayOrders.filter(o=>o.status==='cancelled').length;
+  const pending=dayOrders.filter(o=>o.status==='pending').length;
+  // overdue = from past days still pending shown in today
+  const overdue=g._overdue||[];
+  const isOpen=openDays.has(g.date);
+  const hasOverdue=isToday&&overdue.length>0;
+
+  let pills=`<span class="day-pill pill-total">${total} pedidos</span>`;
+  if(done)pills+=`<span class="day-pill pill-done">✓ ${done}</span>`;
+  if(pending)pills+=`<span class="day-pill pill-pending">${pending} pend.</span>`;
+  if(cancelled)pills+=`<span class="day-pill pill-cancelled">${cancelled} cancel.</span>`;
+  if(hasOverdue)pills+=`<span class="day-pill pill-overdue">⚠ ${overdue.length} atrasado${overdue.length>1?'s':''}</span>`;
+
+  let ordersHtml='';
+  if(isOpen){
+    if(hasOverdue){
+      ordersHtml+=`<div class="overdue-banner">⚠️ ${overdue.length} pedido${overdue.length>1?'s':''} pendente${overdue.length>1?'s':''} de dia${overdue.length>1?'s anteriores':' anterior'}</div>`;
+      overdue.forEach(o=>{ordersHtml+=renderOrderCard(o,true);});
+      if(dayOrders.length)ordersHtml+=`<div style="font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;padding:8px 0 4px">Pedidos de hoje</div>`;
+    }
+    dayOrders.forEach(o=>{ordersHtml+=renderOrderCard(o,false);});
+    if(!total&&!hasOverdue)ordersHtml='<div class="empty" style="margin:0"><div class="empty-icon">📦</div><div class="empty-text">Nenhum pedido neste dia</div></div>';
+  }
+
+  return `<div class="day-card ${isToday?'today':''} ${hasOverdue?'has-overdue':''} ${isOpen?'open':''}" id="daycard-${g.date}">
+    <div class="day-card-header" onclick="toggleDay('${g.date}')">
+      <div class="day-card-date">
+        <div class="day-date-main">${main}</div>
+        <div class="day-date-sub">${sub}</div>
+      </div>
+      <div class="day-pills">${pills}</div>
+      <span class="day-chevron">${isOpen?'▴':'▾'}</span>
+    </div>
+    <div class="day-orders-wrap" style="${isOpen?'display:block':'display:none'}">${ordersHtml}</div>
+  </div>`;
+}
+
+function toggleDay(dk){
+  const card=document.getElementById('daycard-'+dk);
+  const wrap=card.querySelector('.day-orders-wrap');
+  const chev=card.querySelector('.day-chevron');
+  if(openDays.has(dk)){openDays.delete(dk);card.classList.remove('open');wrap.style.display='none';chev.textContent='▾';}
+  else{openDays.add(dk);card.classList.add('open');wrap.style.display='block';chev.textContent='▴';}
+}
+
+function renderOrderCard(o,isOverdueDisplay){
+  const isCancelled=o.status==='cancelled',isDelivered=o.status==='delivered';
+  const isOverdue=o.date<today()&&o.status==='pending';
+  let obsHtml='';
+  if(o.obsLogistics||(o.obsSellers&&o.obsSellers.length)){
+    obsHtml='<div class="obs-section">';
+    if(o.obsLogistics)obsHtml+=`<div class="obs-bubble obs-logistics"><div class="obs-author">Logística</div>${esc(o.obsLogistics)}</div>`;
+    (o.obsSellers||[]).forEach(s=>{obsHtml+=`<div class="obs-bubble ${s.isCancel?'obs-cancel':'obs-seller'}"><div class="obs-author">${esc(s.author)} · ${s.time}</div>${esc(s.text)}</div>`;});
+    obsHtml+='</div>';
+  }
+  let actionHtml='';
+  if(isDelivered){
+    actionHtml=`<div class="delivery-info"><div class="delivery-time">${o.deliveredAt}</div><div class="delivery-who">${esc(o.deliveredBy)}</div>${o.deliveredNote?`<div class="delivery-who" style="font-style:italic">${esc(o.deliveredNote)}</div>`:''}</div>`;
+    if(role==='logistics')actionHtml+=`<button class="obs-btn" onclick="openLObsModal('${o.id}')">✏ Obs</button>`;
+  } else if(isCancelled){
+    actionHtml='<div class="cancel-lbl">✕ Cancelado</div>';
+  } else if(role==='seller'){
+    actionHtml=`<button class="obs-btn" onclick="openObsModal('${o.id}')">+ Obs</button><button class="obs-btn" style="border-color:#E8C4C4;color:var(--danger);margin-top:2px" onclick="openCancelModal('${o.id}')">Cancelar</button>`;
+  } else {
+    actionHtml=`<button class="deliver-btn" onclick="openDeliverModal('${o.id}')">Marcar<br>Entregue</button><button class="obs-btn" style="border-color:rgba(184,147,90,.4);color:var(--gold)" onclick="openEditModal('${o.id}')">✎ Editar</button><button class="obs-btn" onclick="openLObsModal('${o.id}')">✏ Obs</button><button class="delete-btn" onclick="deleteOrder('${o.id}')" title="Remover">✕</button>`;
+  }
+  return `<div class="order-card ${isDelivered?'delivered':''} ${isCancelled?'cancelled':''} ${isOverdue?'overdue-card':''}">
+    <div class="order-num">${isDelivered?'✓':isCancelled?'✕':'·'}</div>
+    <div class="order-main">
+      <div class="order-top"><div class="order-name">${esc(o.client)}</div><div class="order-id">${esc(o.orderNum)}</div></div>
+      <div class="order-product">${esc(o.product)}</div>
+      <div class="order-address">📍 ${esc(o.address)}</div>
+      ${o.phone?`<div class="order-address">📞 ${esc(o.phone)}</div>`:''}
+      <div class="order-meta">
+        <span class="tag ${o.priority==='urgente'?'tag-priority':'tag-normal'}">${o.priority}</span>
+        ${isDelivered?'<span class="tag tag-delivered">✓ entregue</span>':''}
+        ${isCancelled?'<span class="tag tag-cancelled">✕ cancelado</span>':''}
+        ${isOverdue?'<span class="tag tag-overdue">⚠ atrasado</span>':''}
+        ${o.photo?`<span class="tag tag-photo" onclick="openPhotoModal('${o.id}_photo')">📷 foto</span>`:''}
+      </div>
+      ${obsHtml}
+    </div>
+    <div class="order-action">${actionHtml}</div>
+  </div>`;
+}
+
+// ── RENDER PORTADOR ──
+function renderCarrier(){
+  const t=today();
+  const active=orders.filter(o=>o.status!=='cancelled');
+  const total=active.length,done=active.filter(o=>o.status==='delivered').length,pending=active.filter(o=>o.status==='pending').length;
+  const pct=total>0?Math.round(done/total*100):0;
+  document.getElementById('c-total').textContent=total;
+  document.getElementById('c-done').textContent=done;
+  document.getElementById('c-pending').textContent=pending;
+  document.getElementById('c-pct').textContent=pct+'%';
+  document.getElementById('c-bar').style.width=pct+'%';
+
+  const container=document.getElementById('carrier-days');
+
+  // overdue
+  const overdue=orders.filter(o=>o.status==='pending'&&o.date&&o.date<t);
+  // today
+  const todayOrders=orders.filter(o=>o.date===t&&o.status!=='cancelled');
+
+  let html='';
+  if(overdue.length){
+    html+=`<div class="carrier-day-section">
+      <div class="carrier-day-label past-label">⚠ Pendentes de dias anteriores — ${overdue.length} pedido${overdue.length>1?'s':''}</div>
+      ${overdue.map((o,i)=>renderCarrierCard(o,i)).join('')}
+    </div>`;
+  }
+  if(todayOrders.length){
+    html+=`<div class="carrier-day-section">
+      <div class="carrier-day-label today-label">Hoje — ${todayOrders.length} pedido${todayOrders.length>1?'s':''}</div>
+      ${[...todayOrders.filter(o=>o.priority==='urgente'&&o.status==='pending'),...todayOrders.filter(o=>o.priority!=='urgente'&&o.status==='pending'),...todayOrders.filter(o=>o.status==='delivered')].map((o,i)=>renderCarrierCard(o,i)).join('')}
+    </div>`;
+  }
+  if(!html)html='<div class="empty" style="border-color:rgba(184,147,90,.15)"><div class="empty-icon" style="opacity:.3">📦</div><div class="empty-text" style="color:var(--muted)">Nenhuma entrega para hoje</div></div>';
+  container.innerHTML=html;
+}
+
+function renderCarrierCard(o,i){
+  const isDone=o.status==='delivered';
+  const isOverdue=o.date<today()&&o.status==='pending';
+  const obsLog=o.obsLogistics?`<div class="dc-obs-log"><div class="dc-obs-log-label">Instrução</div>${esc(o.obsLogistics)}</div>`:'';
+  const obsSell=(o.obsSellers||[]).filter(s=>!s.isCancel).map(s=>`<div class="dc-obs-seller"><div class="dc-obs-sell-label">${esc(s.author)} · ${s.time}</div>${esc(s.text)}</div>`).join('');
+  const cancelObs=(o.obsSellers||[]).filter(s=>s.isCancel).map(s=>`<div class="dc-cancel-banner">${esc(s.text)}</div>`).join('');
+  const protoDone=isDone?`<div class="protocol-done"><div class="protocol-done-title">✓ Protocolo</div><div class="protocol-done-row"><span class="protocol-done-key">Horário</span><span class="protocol-done-val">${o.deliveredAt}</span></div><div class="protocol-done-row"><span class="protocol-done-key">Recebido</span><span class="protocol-done-val">${esc(o.deliveredBy)}</span></div>${o.deliveredNote?`<div class="protocol-done-row"><span class="protocol-done-key">Obs</span><span class="protocol-done-obs">${esc(o.deliveredNote)}</span></div>`:''}</div>`:'';
+  const form=!isDone?`<div class="dc-action-area" id="dcact-${o.id}"><div class="protocol-box"><div class="protocol-title">Protocolo de Entrega</div><div class="protocol-field"><label class="protocol-label">Recebido por *</label><input class="protocol-input" id="dc-recv-${o.id}" placeholder="Nome de quem recebeu"></div><div class="protocol-field"><label class="protocol-label">Observação</label><textarea class="protocol-input protocol-textarea" id="dc-obs-${o.id}" placeholder="Portaria, ausente, vizinho..."></textarea></div><button class="confirm-deliver-btn" onclick="carrierDeliver('${o.id}')">✓ Confirmar Entrega</button></div></div>`:'';
+  return `<div class="delivery-card ${isDone?'done':''} ${isOverdue?'overdue-dc':''}" style="animation:fadeUp .3s ease ${i*.05}s both">
+    <div class="dc-header" onclick="toggleDcAction('${o.id}',${isDone})">
+      <div class="dc-num">${i+1}</div>
+      <div class="dc-info">
+        <div class="dc-order-id">${esc(o.orderNum)}${o.priority==='urgente'?' · <span style="color:#D4905A;font-size:8px">URGENTE</span>':''}</div>
+        <div class="dc-name">${esc(o.client)}</div>
+        <div class="dc-product">${esc(o.product)}</div>
+        <div class="dc-address">📍 ${esc(o.address)}</div>
+        ${o.phone?`<div class="dc-phone">📞 ${esc(o.phone)}</div>`:''}
+      </div>
+      <div class="dc-status-badge">
+        <span class="dc-badge ${isDone?'dc-badge-done':isOverdue?'dc-badge-overdue':'dc-badge-pending'}">${isDone?'✓ entregue':isOverdue?'⚠ atrasado':'pendente'}</span>
+        ${!isDone?`<span class="dc-expand" id="dcicon-${o.id}">▾</span>`:''}
+      </div>
+    </div>
+    ${obsLog}${obsSell}${cancelObs}${protoDone}${form}
+  </div>`;
+}
+
+function toggleDcAction(id,isDone){
+  if(isDone)return;
+  const area=document.getElementById('dcact-'+id);
+  const icon=document.getElementById('dcicon-'+id);
+  if(!area)return;
+  const open=area.classList.contains('open');
+  area.classList.toggle('open',!open);
+  if(icon)icon.classList.toggle('open',!open);
+  if(!open)setTimeout(()=>document.getElementById('dc-recv-'+id)?.focus(),120);
+}
+
+function carrierDeliver(id){
+  const recv=document.getElementById('dc-recv-'+id)?.value.trim();
+  if(!recv){showToast('⚠️','Informe quem recebeu.','danger');return}
+  const obs=document.getElementById('dc-obs-'+id)?.value.trim();
+  const o=orders.find(x=>x.id===id);
+  o.status='delivered';o.deliveredAt=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  o.deliveredBy=recv;o.deliveredNote=obs||'';
+  saveOrders();
+  addNotif('✅',`Entregue: ${o.orderNum} · ${o.client} — ${recv} às ${o.deliveredAt}`,['seller','logistics']);
+  showToast('✅','Entrega registrada!','success');
+  renderCarrier();
+}
+
+// ── UTILS ──
+function esc(s){return s?(s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}
+
+// foto via id tag
+document.addEventListener('click',e=>{
+  const tag=e.target.closest('.tag-photo');
+  if(tag){
+    const src=tag.getAttribute('onclick')||'';
+    const m=src.match(/'([^']+)_photo'/);
+    if(m){const o=orders.find(x=>x.id===m[1]);if(o?.photo){openPhotoModal(o.photo);}}
+  }
+});
+</script>
+</body>
+</html>
